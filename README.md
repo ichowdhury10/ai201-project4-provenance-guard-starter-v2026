@@ -208,7 +208,7 @@ All five pass on one run. The model signal is almost deterministic on my machine
 
 ## How I Used AI
 
-I built this with Claude Code doing the typing, so these are the two moments that changed what shipped.
+I built this with Claude Code, I used it to help me debug and analyze my code, so these are the two moments that changed what shipped.
 
 **Moment 1**
 
