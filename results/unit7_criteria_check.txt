@@ -1,0 +1,5 @@
+[PASS] 1. false positives: 0 of 10 human pieces labeled AI (target <= 1)
+[PASS] 2. spread: mean AI - mean human = 0.358 (target >= 0.25); highest clearly-human = 0.492 (target <= 0.65)
+[PASS] 3. labels reached in 17 inputs: ['ai', 'human', 'unsure']; sweep gaps: 0
+[PASS] 4. appeals: 5/5 ok, 5/5 logged; bad ids -> [404, 400], stray appeal entries: 0
+[PASS] 5. bad input: {'missing text': 400, 'empty text': 400, 'whitespace': 400, 'number text': 400, 'json list': 400, 'missing creator': 400, '100k chars': 413}; rejection entries logged: 7/7
