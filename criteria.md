@@ -42,63 +42,43 @@ Two things worth knowing before you pick numbers:
   a **miss**.
 
 ---
-## 1.
+## 1. False positives: few real writers get accused
 
-<!-- Your criterion. It must name a number. -->
+Of 10 pieces of human writing I judge to be real (including 3 deliberately plain, short-sentence pieces of the kind a second-language writer or a student might produce), **at most 1 is labeled high-confidence AI**, and this holds in each of three runs.
 
-
-
-**Why this target:**
-
-
+**Why this target:** On a writing site, a wrong accusation costs the writer far more than a missed detection costs the site. 1 in 10 is already a rate I would find hard to say out loud to the person it hits, so I'm not going higher. I'm including plain writing on purpose because that is where this kind of detector is weakest.
 
 ---
 
-## 2.
+## 2. Score spread: AI and human text score clearly apart
 
-<!-- Your criterion. -->
+The mean combined score of 5 clearly-AI pieces is **at least 0.25 higher** than the mean of 5 clearly-human pieces, and no clearly-human piece scores above 0.65.
 
-
-
-**Why this target:**
-
-
+**Why this target:** If the two groups sit within a few hundredths of each other, the score is noise dressed up as confidence. 0.25 is a quarter of the whole scale, enough to span the unsure band between the two labels.
 
 ---
 
-## 3.
+## 3. Label coverage: all three labels are reachable and there are no gaps
 
-<!-- Your criterion. -->
+Across a set of 15 varied inputs, **all three labels (AI, human, unsure) each appear at least once**, and a sweep of every score from 0.00 to 1.00 in steps of 0.01 maps to exactly one of the three labels (0 gaps, 0 overlaps).
 
-
-
-**Why this target:**
-
-
+**Why this target:** A label nobody can ever receive is dead text, and a gap in the ranges would crash or return nothing for some real score. The sweep is a plain, checkable fact. The 15-input check makes sure the labels are reachable by real text rather than only in theory.
 
 ---
 
-## 4.
+## 4. The appeal path always works and never invents records
 
-<!-- Your criterion. -->
+For **5 of 5** appeals sent with a valid content_id, the response is 200 with status `under_review`, and `GET /log` shows a new appeal entry with that content_id and the writer's reasoning. For **2 of 2** appeals with an unknown or missing content_id, the response is a 4xx and **nothing** is written to the log.
 
-
-
-**Why this target:**
-
-
+**Why this target:** The appeal is the only thing between a wrong accusation and no recourse, so it can't be allowed to fail even once. The unknown-id case matters just as much: a typo silently recording an appeal against nothing would make the log lie.
 
 ---
 
-## 5.
+## 5. Bad input never crashes the service
 
-<!-- Your criterion. -->
+Of 7 malformed submissions (missing `text`, empty text, whitespace-only text, `text` that is a number, a body that is a JSON list, missing `creator_id`, and 100,000 characters of text), **0 return a 500 or hang**. Every one returns a JSON error with a 4xx status, and every one leaves a rejection entry in the log.
 
-
-
-**Why this target:**
-
-
+**Why this target:** A crash on malformed input is one of the most common real failures, and it is also the cheapest attack to try. I want every refusal to be a clean answer with a reason, and I want it logged so an attack can't be invisible.
 
 ---
 
