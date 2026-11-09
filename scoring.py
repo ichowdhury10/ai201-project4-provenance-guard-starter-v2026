@@ -21,76 +21,66 @@ import config
 
 def combine_signals(model_score: float, style_score: float) -> float:
     """
-    Combine two 0–1 signals into one 0–1 score. ← TODO (Milestone 4)
+    Combine two 0-1 signals into one 0-1 score. Higher = more likely AI.
 
-    Both inputs point the same way: higher means more likely AI. Your output
-    should too.
+    The rule (numbers live in config.py):
 
-    Args:
-        model_score: from `detector.model_signal` — how predictable the text is.
-        style_score: from `stylometry.style_signal` — the shape of the text.
+      1. Weighted average: 0.5 * model_score + 0.5 * style_score.
+      2. Disagreement: if the two signals are more than 0.25 apart, pull the
+         average halfway back toward 0.5. Two methods disagreeing IS
+         uncertainty, so the result lands nearer the middle and the writer gets
+         the "unsure" label rather than an accusation resting on one signal.
 
-    Returns:
-        A float from 0.0 (confidently human) to 1.0 (confidently AI).
+    Why equal weights: on my calibration set (calibrate.py) the model signal
+    separates clear AI from clear human better, but it also scores plain human
+    writing as machine-like, and the style signal is the only thing that
+    differs on those pieces. Neither deserves to win outright.
 
-    ⚠️ **Write the rule down before you code it, and put the numbers in your
-    README.** A weighted average is the obvious choice and it is not the only
-    one. Things worth thinking about:
-
-      - **What happens when they disagree?** One signal at 0.9 and the other at
-        0.1 averages to 0.5 — "unsure". Is that what you want? It might be
-        exactly right: two methods disagreeing IS uncertainty. Or you might
-        decide one signal is more trustworthy when they split.
-
-      - **Which way do you want to be wrong?** Weighting toward the signal that
-        reads more human means fewer false accusations and more AI text
-        getting through. There's no weighting that avoids the trade.
-
-      - Milestone 4 asks you to find a case where your two signals split and
-        write it down. That case is what this rule exists to handle.
-
-    The weights in config.py are placeholders. Change them, or ignore them and
-    write a different rule.
+    Why the AI line, not the weights, carries the false-positive decision: see
+    AI_THRESHOLD in config.py.
     """
-    # TODO: replace this
-    return (
+    avg = (
         config.WEIGHT_MODEL_SIGNAL * model_score
         + config.WEIGHT_STYLE_SIGNAL * style_score
     )
+    if abs(model_score - style_score) > config.DISAGREEMENT_GAP:
+        avg = 0.5 + (avg - 0.5) * (1 - config.DISAGREEMENT_SHRINK)
+    return round(min(max(avg, 0.0), 1.0), 4)
+
+
+def confidence(score: float) -> float:
+    """
+    How sure the system is of its guess, 0-1: 0 at a score of 0.5 (a coin
+    flip), 1 at 0.0 or 1.0. This is distance from the middle, doubled.
+    """
+    return round(abs(score - 0.5) * 2, 4)
+
+
+LABEL_AI = (
+    "Our checks found patterns in this text that are common in AI-written "
+    "text, but they can't prove it, and plain, simple writing by people can "
+    "look this way too. If you wrote this yourself, please tell us. You can "
+    "appeal, and a person will look at it."
+)
+LABEL_HUMAN = "We think this was probably written by a person."
+LABEL_UNSURE = (
+    "We can't tell how this was written. Our checks didn't point clearly "
+    "either way, so we're not drawing a conclusion. Nothing is held against "
+    "you, and you don't need to do anything."
+)
 
 
 def score_to_label(score: float) -> tuple[str, str]:
     """
-    Turn a score into a guess and the text a reader actually sees.
-    ← TODO (Milestone 5)
-
-    Returns:
-        (guess, label_text) — where `guess` is a short machine-readable string
-        like "ai" / "human" / "unsure", and `label_text` is the full sentence
-        shown to a person.
-
-    ⚠️ Write the label text for someone who has never heard the word
-    "threshold".
-
-        ✗ "human, 0.81 confidence"
-        ✓ "We think this was probably written by a person."
-
-    All three labels have to be **reachable**. If no score can produce one of
-    them, your ranges have a gap — and Milestone 5 asks you to submit text that
-    produces each one, which is how you'd find out.
-
-    The hardest one to write is "unsure". It has to admit uncertainty without
-    sounding like an accusation, because the person reading it may well have
-    written every word themselves. Your breakout asks your group what they'd
-    think if they got it on their own work. That question is the whole
-    milestone.
+    Turn a score into (guess, label_text). Every score from 0 to 1 maps to
+    exactly one of three: <= HUMAN_THRESHOLD human, >= AI_THRESHOLD ai,
+    otherwise unsure.
     """
-    # TODO: replace this — thresholds are in config.py
     if score >= config.AI_THRESHOLD:
-        return "ai", "PLACEHOLDER — write the high-confidence AI label."
+        return "ai", LABEL_AI
     if score <= config.HUMAN_THRESHOLD:
-        return "human", "PLACEHOLDER — write the high-confidence human label."
-    return "unsure", "PLACEHOLDER — write the unsure label."
+        return "human", LABEL_HUMAN
+    return "unsure", LABEL_UNSURE
 
 
 def label_ranges() -> list[tuple[str, str]]:

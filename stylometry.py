@@ -83,6 +83,13 @@ def sentence_length_spread(text: str) -> float:
     return statistics.stdev(lengths) / mean
 
 
+def mean_sentence_length(text: str) -> float:
+    """Average sentence length in words (0.0 for empty text)."""
+    lengths = [len(words(x)) for x in sentences(text)]
+    lengths = [n for n in lengths if n > 0]
+    return statistics.mean(lengths) if lengths else 0.0
+
+
 def type_token_ratio(text: str) -> float:
     """
     Unique words over total words, 0–1. Higher = more varied vocabulary.
@@ -130,7 +137,7 @@ def punctuation_density(text: str) -> float:
 
 # Each measure is rescaled to 0–1 "AI-ness" with a linear ramp between a value
 # that looks clearly AI (1.0) and one that looks clearly human (0.0).
-STYLE_WEIGHTS = {"spread": 0.45, "ttr": 0.20, "punct": 0.35}
+STYLE_WEIGHTS = {"spread": 0.35, "ttr": 0.15, "punct": 0.30, "length": 0.20}
 
 
 def _ramp(value: float, ai_at: float, human_at: float) -> float:
@@ -143,6 +150,11 @@ def style_parts(text: str) -> dict:
         "spread": round(_ramp(sentence_length_spread(text), ai_at=0.25, human_at=0.75), 3),
         "ttr": round(_ramp(type_token_ratio(text), ai_at=0.55, human_at=0.85), 3),
         "punct": round(_ramp(punctuation_density(text), ai_at=0.25, human_at=0.75), 3),
+        # Typical chatbot prose averages 14+ words a sentence. Very short
+        # average sentences (under ~8 words) are not what a chatbot defaults to,
+        # so they push toward human. Added after calibration showed plain,
+        # short-sentence human writing scoring as AI on every other measure.
+        "length": round(_ramp(mean_sentence_length(text), ai_at=14, human_at=8), 3),
     }
 
 
@@ -150,8 +162,8 @@ def style_signal(text: str) -> float:
     """
     The style signal as a 0–1 score. **Higher means more likely AI.**
 
-    Weighted sum of the three rescaled parts (spread 0.45, vocabulary 0.20,
-    punctuation 0.35). Texts under MIN_WORDS words are pulled toward 0.5,
+    Weighted sum of four rescaled parts (spread 0.35, vocabulary 0.15,
+    punctuation 0.30, mean sentence length 0.20). Texts under MIN_WORDS words are pulled toward 0.5,
     because three numbers from a dozen words are mostly noise.
     """
     parts = style_parts(text)

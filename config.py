@@ -57,6 +57,12 @@ DETECTOR_MAX_TOKENS = 400
 WEIGHT_MODEL_SIGNAL = 0.5
 WEIGHT_STYLE_SIGNAL = 0.5
 
+# When the two signals are further apart than this, the combined score is
+# pulled toward 0.5 by DISAGREEMENT_SHRINK (0.5 = halfway). Two methods that
+# disagree is itself uncertainty, so it should read as "unsure".
+DISAGREEMENT_GAP = 0.25
+DISAGREEMENT_SHRINK = 0.5
+
 
 # ─── Thresholds (Milestone 5) ────────────────────────────────────────────────
 # Where one label becomes another. Scores run 0.0 (confidently human) to 1.0
@@ -71,8 +77,11 @@ WEIGHT_STYLE_SIGNAL = 0.5
 # getting through. There is no setting that avoids the trade — only settings
 # that decide who pays for it.
 
+# Chosen from calibrate.py: plain, simple human writing scored 0.71-0.78
+# combined, AI-style prose 0.67-0.81. The AI line sits at 0.80, above the
+# plain-human cluster, on purpose: a wrong accusation costs more than a miss.
 HUMAN_THRESHOLD = 0.35
-AI_THRESHOLD = 0.65
+AI_THRESHOLD = 0.80
 
 # ⚠️ One thing that catches people out in Milestone 5. A weighted average can
 # only land between its two inputs — so while `style_signal` is still the stub
